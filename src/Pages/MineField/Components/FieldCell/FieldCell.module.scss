@@ -1,0 +1,29 @@
+.cell{
+    margin: 2px;
+    width: 40px;
+    height: 40px;
+    cursor:pointer;
+    position: relative;
+    border-radius: 5px;
+}
+
+.text{
+    margin: 0;
+    position: absolute;
+    text-decoration: none;
+    font-size: 16px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.closed{
+    background-color: CornflowerBlue;
+    &:hover{
+        background-color:  rgba(100, 149, 237, 0.5)
+    }
+}
+
+.opened{
+    background-color: rgba(100, 149, 237, 0.7);
+}

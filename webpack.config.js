@@ -5,6 +5,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 // const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
 const ESLintPlugin = require('eslint-webpack-plugin');
+const getCSSModuleLocalIdent = require('react-dev-utils/getCSSModuleLocalIdent');
 
 module.exports = (env, argv) => {
     const isDevelopment  = argv.mode === 'development';
@@ -47,9 +48,16 @@ module.exports = (env, argv) => {
                         {
                             loader: 'css-loader',
                             options: {
+                                importLoaders: 1,
                                 modules: {
-                                    localIdentName: isDevelopment ? '[path][name]__[local]' : '[hash:base64]',
+                                    getLocalIdent: getCSSModuleLocalIdent
                                 },
+                                sourceMap: isDevelopment
+                            }
+                        },
+                        {
+                            loader: 'resolve-url-loader',
+                            options: {
                                 sourceMap: isDevelopment
                             }
                         },
@@ -72,9 +80,9 @@ module.exports = (env, argv) => {
                         {
                             loader: 'css-loader',
                             options: {
-                                importLoaders: 2,
+                                importLoaders: 1,
                                 modules: {
-                                    localIdentName: isDevelopment ? "[path][name]__[local]" : "[hash:base64:5]",
+                                    getLocalIdent: getCSSModuleLocalIdent
                                 },
                                 sourceMap: isDevelopment
                             }
