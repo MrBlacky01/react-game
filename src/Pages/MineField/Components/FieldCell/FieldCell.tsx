@@ -41,9 +41,9 @@ export class FieldCell extends React.Component<FieldCellProps, FieldCellState>{
 
     private flagField(){
         const {onFlag, index, hasFreeFlag} = this.props;
-        if(!hasFreeFlag)
-            return;
         const {hasFlag} = this.state;
+        if(!hasFreeFlag && !hasFlag)
+            return;
         this.setState({
             ...this.state,
             hasFlag: !hasFlag

@@ -56,12 +56,6 @@ module.exports = (env, argv) => {
                             }
                         },
                         {
-                            loader: 'resolve-url-loader',
-                            options: {
-                                sourceMap: isDevelopment
-                            }
-                        },
-                        {
                             loader: 'sass-loader',
                             options: {
                                 sourceMap: isDevelopment
@@ -80,10 +74,6 @@ module.exports = (env, argv) => {
                         {
                             loader: 'css-loader',
                             options: {
-                                importLoaders: 1,
-                                modules: {
-                                    getLocalIdent: getCSSModuleLocalIdent
-                                },
                                 sourceMap: isDevelopment
                             }
                         },
@@ -102,9 +92,6 @@ module.exports = (env, argv) => {
                       {
                         loader: 'css-loader',
                         options: {
-                            modules: {
-                                localIdentName: isDevelopment ? "[path][name]__[local]" : "[path][name]__[local]--[hash:base64:5]",
-                            },
                             sourceMap: isDevelopment
                         }
                     },

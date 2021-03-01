@@ -13,6 +13,7 @@ interface MineFieldProps {
 
 interface MineFieldState {
     fieldValues: Array<number>;
+    flagCount: number;
 }
 
 export class MineField extends React.Component<MineFieldProps, MineFieldState>{
@@ -22,7 +23,8 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
         super(props);
         this.mineService = new MineService();
         this.state = {
-            fieldValues: []
+            fieldValues: [],
+            flagCount: props.bombCount,
         };
     }
 
@@ -38,10 +40,17 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
         event.preventDefault();
     }
 
+    _handleFlag = (index: number, isPut: boolean) => {
+        this.setState({
+            ...this.state,
+            flagCount: isPut ? this.state.flagCount - 1: this.state.flagCount + 1,
+        });
+    }
+
     renderField(){
         let resultTable: JSX.Element[] = [];
         const {width, height} = this.props;
-        const {fieldValues} = this.state;
+        const {fieldValues, flagCount} = this.state;
         for(var i = 0; i < height; i++){
             const beginLenght = i * width;
             const rowItems = fieldValues.slice(beginLenght, beginLenght + width);
@@ -49,7 +58,14 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
                 <div key={"row" + i} className={styles.row}>
                     {rowItems.map( (item, index) => {
                         const type = item === 0 ? CellValueEnum.Empty : item === MineSwiper.BOMB_VALUE ? CellValueEnum.Bomb : CellValueEnum.WithNumber; 
-                        return <FieldCell key={index + beginLenght} index={index + beginLenght} hasFreeFlag type={type} value={item} />
+                        return <FieldCell 
+                            key={index + beginLenght} 
+                            index={index + beginLenght} 
+                            hasFreeFlag={flagCount > 0}
+                            type={type} 
+                            value={item} 
+                            onFlag={this._handleFlag}
+                        />
                     })}
                 </div>
             )
@@ -58,8 +74,10 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
     }
 
     render(){
+        const {flagCount} = this.state;
         return (
             <Container onContextMenu={this._handleContextClick}>
+                Flags: {flagCount}
                 {this.renderField()}
             </Container>
         );
