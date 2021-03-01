@@ -8,8 +8,9 @@ interface FieldCellProps {
     hasFreeFlag: boolean;
     index:number;
     value?: number; 
+    shouldBeOpened: boolean;
 
-    onOpen?: (index: number, type: CellValueEnum) => void;
+    onOpen?: (index: number, type: CellValueEnum, hasFlag: boolean) => void;
     onFlag?: (index: number, isPut: boolean) => void;
 }
 
@@ -28,14 +29,24 @@ export class FieldCell extends React.Component<FieldCellProps, FieldCellState>{
         };
     }
 
+    componentDidUpdate(prevProps: FieldCellProps){
+        if(this.props.shouldBeOpened !== prevProps.shouldBeOpened){
+            this.setState({
+                ...this.state,
+                isOpened: this.props.shouldBeOpened
+            })
+        }
+    }
+
     private openField(){
+        const {onOpen, index, type, onFlag} = this.props;
         this.setState({
             ...this.state,
-            isOpened: true
+            isOpened: true,
+            hasFlag: false
         });
-        const {onOpen, index, type} = this.props;
         if(onOpen){
-            onOpen(index, type)
+            onOpen(index, type, this.state.hasFlag)
         }
     }
 
@@ -66,7 +77,7 @@ export class FieldCell extends React.Component<FieldCellProps, FieldCellState>{
     }
 
     render(){
-        const {type, value} = this.props;
+        const {type, value, shouldBeOpened} = this.props;
         const {isOpened, hasFlag} = this.state;
         return (
             <>
