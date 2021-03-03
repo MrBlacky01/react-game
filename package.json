@@ -55,7 +55,7 @@
     "watch": "webpack --watch",
     "dev-server": "webpack-dev-server --open",
     "start": "node server.js",
-    "build": "webpack -p",
+    "build": "webpack",
     "heroku-postbuild": "npm run build"
   },
   "repository": {
