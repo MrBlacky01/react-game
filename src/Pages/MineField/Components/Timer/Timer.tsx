@@ -15,7 +15,7 @@ interface TimerState {
 
 export class Timer extends React.Component<TimerProps, TimerState>{
 
-    private _watch: NodeJS.Timeout;
+    private _watch: number;
     constructor(props: TimerProps){
         super(props);
         this.state = {
