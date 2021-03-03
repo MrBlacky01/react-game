@@ -1,3 +1,20 @@
-.row{
+.field{
     display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stats{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.flags{
+    width: 20%;
+}
+.score{
+    width: 20%;
+    text-align: end;
 }

@@ -1,68 +1,58 @@
 import React from 'react';
-import { Button } from 'reactstrap';
 import { CellValueEnum } from '../../../../AppConstants';
 import styles from  "./FieldCell.module.scss"
 
 interface FieldCellProps {
     type: CellValueEnum;
     hasFreeFlag: boolean;
+    hasFlag: boolean;
     index:number;
     value?: number; 
     shouldBeOpened: boolean;
 
-    onOpen?: (index: number, type: CellValueEnum, hasFlag: boolean) => void;
+    onOpen?: (index: number, type: CellValueEnum) => void;
     onFlag?: (index: number, isPut: boolean) => void;
 }
 
 interface FieldCellState {
     isOpened: boolean;
-    hasFlag: boolean;
 }
 
-export class FieldCell extends React.Component<FieldCellProps, FieldCellState>{
+export class FieldCell extends React.PureComponent<FieldCellProps, FieldCellState>{
 
     constructor(props: FieldCellProps){
         super(props);
         this.state = {
-            isOpened: false,
-            hasFlag: false
+            isOpened: false
         };
     }
 
     componentDidUpdate(prevProps: FieldCellProps){
         if(this.props.shouldBeOpened !== prevProps.shouldBeOpened){
             this.setState({
-                ...this.state,
-                isOpened: this.props.shouldBeOpened
+                isOpened: this.props.shouldBeOpened,
             })
         }
     }
 
     private openField(){
-        const {onOpen, index, type, onFlag} = this.props;
+        const {onOpen, index, type} = this.props;
         this.setState({
             ...this.state,
             isOpened: true,
-            hasFlag: false
         });
         if(onOpen){
-            onOpen(index, type, this.state.hasFlag)
+            onOpen(index, type)
         }
     }
 
     private flagField(){
-        const {onFlag, index, hasFreeFlag} = this.props;
-        const {hasFlag} = this.state;
+        const {onFlag, index, hasFreeFlag, hasFlag} = this.props;
         if(!hasFreeFlag && !hasFlag)
             return;
-        this.setState({
-            ...this.state,
-            hasFlag: !hasFlag
-        }, () =>{
-            if(onFlag){
-                onFlag(index, this.state.hasFlag)
-            }
-        });
+        if(onFlag){
+            onFlag(index, !hasFlag)
+        }
     }
 
     private _handleClick = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -77,8 +67,8 @@ export class FieldCell extends React.Component<FieldCellProps, FieldCellState>{
     }
 
     render(){
-        const {type, value, shouldBeOpened} = this.props;
-        const {isOpened, hasFlag} = this.state;
+        const {type, value, hasFlag } = this.props;
+        const {isOpened} = this.state;
         return (
             <>
                 <div className={`${styles.cell} ${isOpened ? styles.opened : styles.closed}`}
@@ -87,7 +77,7 @@ export class FieldCell extends React.Component<FieldCellProps, FieldCellState>{
                 >
                     <span className={styles.text}>
                         {hasFlag && !isOpened ? 'F' : null}
-                        {isOpened ? type == CellValueEnum.Bomb? 'B' : value : null}
+                        {isOpened ? type == CellValueEnum.Bomb? 'B' : value ? value : null : null}
                     </span>
                 </div>
             </>

@@ -3,7 +3,9 @@ import styles from "./MineFiled.module.scss"
 import { FieldCell } from './Components/FieldCell/FieldCell';
 import { CellValueEnum, GameConditionEnum, MineSwiperField } from '../../AppConstants';
 import { MineService } from './../../Services/MineService';
-import { Container } from 'reactstrap';
+import { Button, Container } from 'reactstrap';
+import { Timer } from './Components/Timer/Timer';
+import { ModalDialog } from './Components/ModalDialog/ModalDialog';
 
 interface MineFieldProps {
     width: number;
@@ -13,9 +15,11 @@ interface MineFieldProps {
 
 interface MineFieldState {
     fieldValues: Array<number>;
-    flagCount: number;
+    flagsValues: Array<number>;
     fieldStatuses: Array<boolean>;
-    condition: GameConditionEnum
+    condition: GameConditionEnum;
+    currentTime: number;
+    beginTime: number;
 }
 
 export class MineField extends React.Component<MineFieldProps, MineFieldState>{
@@ -27,18 +31,35 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
         this.mineService = new MineService();
         this.state = {
             fieldValues: [],
-            flagCount: props.bombCount,
+            flagsValues: [],
             fieldStatuses: [],
-            condition: GameConditionEnum.InProgress
+            condition: GameConditionEnum.New,
+            currentTime: 0,
+            beginTime: 0
         };
     }
 
     componentDidMount(){
+        this._resetGameState();
+    }
+
+    _handleContextClick(event: React.MouseEvent<HTMLElement, MouseEvent>){
+        event.preventDefault();
+    }
+
+    _handleNewGameClick = () => {
+        this._resetGameState();
+    }
+
+    private _resetGameState = () =>{
         const {width, bombCount, height} = this.props;
         this.setState({
-            ...this.state,
             fieldValues: this.mineService.getFieldArray(width, height, bombCount),
             fieldStatuses: this.mineService.getEmptyArray(width * height),
+            condition: GameConditionEnum.New,
+            currentTime: 0,
+            beginTime: 0,
+            flagsValues: [],
         }, () => {
             this.bombIndexes = [];
             this.state.fieldValues.forEach( (x, index) => {
@@ -49,48 +70,62 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
         });
     }
 
-    _handleContextClick(event: React.MouseEvent<HTMLElement, MouseEvent>){
-        event.preventDefault();
-    }
-
     _handleFlag = (index: number, isPut: boolean) => {
-        const {flagCount} = this.state;
-        const newFlagCount = isPut ? flagCount - 1: flagCount + 1
+        const {flagsValues} = this.state;
+        if(isPut){
+            flagsValues.push(index);
+        }else{
+            const flagValueIndex = flagsValues.findIndex(x => x === index);
+            if(flagValueIndex >= 0){
+                flagsValues.splice(flagValueIndex, 1)
+            }
+        }
         this.setState({
             ...this.state,
-            flagCount: newFlagCount,
+            flagsValues: flagsValues,
         });
     }
 
-    _handleOpen = (index: number, type: CellValueEnum, hasFlag: boolean) => {
-        const { condition, flagCount} = this.state;
-        const isFailed = type === CellValueEnum.Bomb;
-        this.setState({
-            ...this.state,
-            condition: isFailed ? GameConditionEnum.Failed: condition,
-            flagCount: hasFlag ? flagCount + 1: flagCount
-        }, () => {
+    _handleOpen = (index: number, type: CellValueEnum) => {       
+        this.setState((state) => { 
+                const isFailed = type === CellValueEnum.Bomb;
+                return {
+                    condition: isFailed ? GameConditionEnum.Failed: state.condition
+                }
+            }, () => {
             this._openCell(index);
         });
     }
 
+    _handleTick = (time: number) =>{
+        this.setState({currentTime: time});
+    }
+
     private _openCell = (index: number) => {
-        const {fieldValues, fieldStatuses, condition} = this.state;
+        const {fieldValues, fieldStatuses, condition, flagsValues} = this.state;
         if(fieldStatuses[index])
             return;
         const isEmpty = fieldValues[index] == MineSwiperField.EMPTY_VALUE;
         fieldStatuses[index] = true;
         const isWin = this._isGameFinished();
+        const isInProgres = condition === GameConditionEnum.New ? GameConditionEnum.InProgress : condition;
+        const flagValueIndex = flagsValues.findIndex(x => x === index);
+        if(flagValueIndex >= 0){
+            flagsValues.splice(flagValueIndex, 1)
+        }
         this.setState({
-            ...this.state,
             fieldStatuses: fieldStatuses,
-            condition: isWin ? GameConditionEnum.Win: condition,
+            condition: isWin ? GameConditionEnum.Win: isInProgres,
+            flagsValues: flagsValues
         }, () => {
             if(isEmpty){
                 const neighbours = this.mineService.getNeighboursIndexesByIndex(index, this.props.width, this.props.height);
-                neighbours.forEach(x => {
-                    this._openCell(x);
-                })
+                setTimeout(() => {
+                    neighbours.forEach(x => {
+                        this._openCell(x);
+                    });
+                });
+                
             }
         })
     }
@@ -103,20 +138,24 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
 
     renderField(){
         let resultTable: JSX.Element[] = [];
-        const {width, height} = this.props;
-        const {fieldValues, flagCount, fieldStatuses} = this.state;
+        const {width, height, bombCount} = this.props;
+        const {fieldValues, flagsValues, fieldStatuses} = this.state;
+        const hasFreeFlags = flagsValues.length < bombCount;
         for(var i = 0; i < height; i++){
             const beginLenght = i * width;
             const rowItems = fieldValues.slice(beginLenght, beginLenght + width);
             resultTable.push(
-                <div key={"row" + i} className={styles.row}>
+                <div key={"row" + i}>
                     {rowItems.map( (item, index) => {
-                        const isOpen = fieldStatuses[beginLenght + index];
+                        const realIndex = beginLenght + index;
+                        const isOpen = fieldStatuses[realIndex];
+                        const hasFlag = flagsValues.some(x => x === realIndex);
                         const type = item === 0 ? CellValueEnum.Empty : item === MineSwiperField.BOMB_VALUE ? CellValueEnum.Bomb : CellValueEnum.WithNumber; 
                         return <FieldCell 
                             key={index + beginLenght} 
                             index={index + beginLenght} 
-                            hasFreeFlag={flagCount > 0}
+                            hasFreeFlag={hasFreeFlags}
+                            hasFlag={hasFlag}
                             type={type} 
                             value={item} 
                             shouldBeOpened={isOpen}
@@ -132,12 +171,40 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
     }
 
     render(){
-        const {flagCount, condition} = this.state;
+        const {flagsValues, condition, beginTime } = this.state;
+        const {bombCount} = this.props;
         return (
             <Container onContextMenu={this._handleContextClick}>
-                Flags: {flagCount}
-                Status: {condition}
-                {this.renderField()}
+                <div className={styles.stats}>
+                    <span className={styles.flags}>Flags: {bombCount - flagsValues.length}</span>              
+                    <Button color="primary" onClick={this._handleNewGameClick}>New Game</Button>
+                    <div className={styles.score}>
+                        <span>Score:  </span>  
+                        <Timer 
+                            timeStart={beginTime}
+                            shouldStart={condition === GameConditionEnum.InProgress}
+                            shouldFinish={condition !== GameConditionEnum.InProgress}
+                            onTick={this._handleTick}
+                        />
+                    </div>
+                </div>
+                <div className={styles.field}>
+                    {this.renderField()}
+                </div>
+                {condition === GameConditionEnum.Win &&
+                    <ModalDialog
+                        title="Congradulations"
+                        body={`You win. Your score is ${this.state.currentTime}`}
+                        onClick={this._handleNewGameClick}
+                    />
+                }
+                {condition === GameConditionEnum.Failed &&
+                    <ModalDialog
+                        title="Ooops :("
+                        body="You loose. Try once again."
+                        onClick={this._handleNewGameClick}
+                    />
+                }
             </Container>
         );
     }

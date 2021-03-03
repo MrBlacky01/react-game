@@ -7,7 +7,8 @@ export enum CellValueEnum {
 export enum GameConditionEnum {
     Win = 'Win',
     Failed = 'Failed',
-    InProgress = 'InProgress'
+    InProgress = 'InProgress',
+    New = 'New'
 }
 
 export class MineSwiperField{
