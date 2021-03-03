@@ -8,7 +8,7 @@ export function App() {
     return (
         <>
             <MainNavbar/>
-            <MineField width={10} height={10} bombCount={4}/>
+            <MineField width={10} height={10} bombCount={20}/>
             <Footer/>
         </>
     );
