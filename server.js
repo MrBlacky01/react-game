@@ -12,6 +12,6 @@ if (process.env.NODE_ENV === 'production') {
     const path = require('path');
     app.get('*', (req, res) => {
       res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
-})
+    })
 };
 app.listen(port, () => console.log("Listening on Port", port));

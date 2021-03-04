@@ -9,8 +9,9 @@ interface FieldCellProps {
     index:number;
     value?: number; 
     shouldBeOpened: boolean;
+    isSelected?: boolean;
 
-    onOpen?: (index: number, type: CellValueEnum) => void;
+    onOpen?: (index: number) => void;
     onFlag?: (index: number, isPut: boolean) => void;
 }
 
@@ -42,7 +43,7 @@ export class FieldCell extends React.PureComponent<FieldCellProps, FieldCellStat
             isOpened: true,
         });
         if(onOpen){
-            onOpen(index, type)
+            onOpen(index)
         }
     }
 
@@ -67,11 +68,11 @@ export class FieldCell extends React.PureComponent<FieldCellProps, FieldCellStat
     }
 
     render(){
-        const {type, value, hasFlag } = this.props;
+        const {type, value, hasFlag, isSelected } = this.props;
         const {isOpened} = this.state;
         return (
             <>
-                <div className={`${styles.cell} ${isOpened ? styles.opened : styles.closed}`}
+                <div className={`${styles.cell} ${isOpened ? styles.opened : styles.closed} ${isSelected ? styles.rainbow: null}`}
                     onContextMenu={this._handleClick}
                     onClick={this._handleClick}
                 >

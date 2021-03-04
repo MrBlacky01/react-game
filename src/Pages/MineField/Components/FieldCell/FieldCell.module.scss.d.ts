@@ -4,6 +4,8 @@ interface CssExports {
   'cell': string;
   'closed': string;
   'opened': string;
+  'rainbow': string;
+  'rotate': string;
   'text': string;
 }
 export const cssExports: CssExports;

@@ -3,9 +3,11 @@ import styles from "./MineFiled.module.scss"
 import { FieldCell } from './Components/FieldCell/FieldCell';
 import { CellValueEnum, GameConditionEnum, MineSwiperField } from '../../AppConstants';
 import { MineService } from './../../Services/MineService';
-import { Button, Container } from 'reactstrap';
+import { Button, Container, Tooltip } from 'reactstrap';
 import { Timer } from './Components/Timer/Timer';
 import { ModalDialog } from './Components/ModalDialog/ModalDialog';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons'
 
 interface MineFieldProps {
     width: number;
@@ -20,6 +22,8 @@ interface MineFieldState {
     condition: GameConditionEnum;
     currentTime: number;
     beginTime: number;
+    selectedIndex: number | null;
+    tooltipOpen: boolean;
 }
 
 export class MineField extends React.Component<MineFieldProps, MineFieldState>{
@@ -35,12 +39,19 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
             fieldStatuses: [],
             condition: GameConditionEnum.New,
             currentTime: 0,
-            beginTime: 0
+            beginTime: 0,
+            selectedIndex: null,
+            tooltipOpen: false
         };
     }
 
     componentDidMount(){
         this._resetGameState();
+        document.addEventListener("keydown", this._handleKeyDown, false);
+    }
+
+    componentWillUnmount(){
+        document.removeEventListener("keydown", this._handleKeyDown, false);
     }
 
     _handleContextClick(event: React.MouseEvent<HTMLElement, MouseEvent>){
@@ -86,9 +97,9 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
         });
     }
 
-    _handleOpen = (index: number, type: CellValueEnum) => {       
+    _handleOpen = (index: number) => {       
         this.setState((state) => { 
-                const isFailed = type === CellValueEnum.Bomb;
+                const isFailed = state.fieldValues[index] === MineSwiperField.BOMB_VALUE;
                 return {
                     condition: isFailed ? GameConditionEnum.Failed: state.condition
                 }
@@ -99,6 +110,90 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
 
     _handleTick = (time: number) =>{
         this.setState({currentTime: time});
+    }
+
+    _handleKeyDown = (event: KeyboardEvent) => {
+        if (event.defaultPrevented) {
+            return; 
+        }
+        switch (event.key) {
+            case "Down": // IE/Edge specific value
+            case "ArrowDown":
+                if(!this._startUsingOfKeyBoard()){
+                    this._changeSelectedIndex(1, 0);
+                }
+              break;
+            case "Up": // IE/Edge specific value
+            case "ArrowUp":
+                if(!this._startUsingOfKeyBoard()){
+                    this._changeSelectedIndex(-1, 0);
+                }
+              break;
+            case "Left": // IE/Edge specific value
+            case "ArrowLeft":
+                if(!this._startUsingOfKeyBoard()){
+                    this._changeSelectedIndex(0, -1);                    
+                }
+              break;
+            case "Right": // IE/Edge specific value
+            case "ArrowRight":
+                if(!this._startUsingOfKeyBoard()){
+                    this._changeSelectedIndex(0, 1);
+                }
+            break;
+            case "Esc": // IE/Edge specific value
+            case "Escape":
+                this.setState({
+                    selectedIndex: null
+                });
+            break;
+            case " ": 
+                if(this.state.selectedIndex !== null){
+                    this._handleOpen(this.state.selectedIndex);
+                }
+            break;
+            default:
+              return; 
+          }
+    }
+
+    private _startUsingOfKeyBoard = () : boolean => {
+        if(!this.state.selectedIndex === null){
+            this.setState({
+                selectedIndex: 0
+            })
+            return true;
+        }
+        return false;
+    }
+    
+    private _changeSelectedIndex = (addToX: number, addToY: number) => {
+        const {height, width} = this.props;
+        const {selectedIndex} = this.state;
+        const x = selectedIndex % width;
+        const y = Math.floor(selectedIndex / width);
+        let newIndexValue = selectedIndex;
+        if(addToX){
+            if(x + addToX >= width){
+                newIndexValue = width * y;
+            }else if(x + addToX < 0){
+                newIndexValue = width * (y + 1) - 1
+            }else{
+                newIndexValue += addToX;
+            }
+        }
+        if(addToY){
+            if(y + addToY >= height){
+                newIndexValue = x;
+            }else if(y + addToY < 0){
+                newIndexValue = width * (height - 1) + x
+            }else{
+                newIndexValue += addToY * height;
+            }
+        }
+        this.setState({
+            selectedIndex: newIndexValue
+        });
     }
 
     private _openCell = (index: number) => {
@@ -136,10 +231,16 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
         });
     }
 
+    _toggleTooltip = () => {
+        this.setState({
+          tooltipOpen: !this.state.tooltipOpen
+        });
+    }
+
     renderField(){
         let resultTable: JSX.Element[] = [];
         const {width, height, bombCount} = this.props;
-        const {fieldValues, flagsValues, fieldStatuses} = this.state;
+        const {fieldValues, flagsValues, fieldStatuses, selectedIndex} = this.state;
         const hasFreeFlags = flagsValues.length < bombCount;
         for(var i = 0; i < height; i++){
             const beginLenght = i * width;
@@ -150,7 +251,8 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
                         const realIndex = beginLenght + index;
                         const isOpen = fieldStatuses[realIndex];
                         const hasFlag = flagsValues.some(x => x === realIndex);
-                        const type = item === 0 ? CellValueEnum.Empty : item === MineSwiperField.BOMB_VALUE ? CellValueEnum.Bomb : CellValueEnum.WithNumber; 
+                        const type = item === 0 ? CellValueEnum.Empty :
+                                     item === MineSwiperField.BOMB_VALUE ? CellValueEnum.Bomb : CellValueEnum.WithNumber; 
                         return <FieldCell 
                             key={index + beginLenght} 
                             index={index + beginLenght} 
@@ -161,7 +263,7 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
                             shouldBeOpened={isOpen}
                             onFlag={this._handleFlag}
                             onOpen={this._handleOpen}
-
+                            isSelected={realIndex === selectedIndex}
                         />
                     })}
                 </div>
@@ -174,7 +276,9 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
         const {flagsValues, condition, beginTime } = this.state;
         const {bombCount} = this.props;
         return (
-            <Container onContextMenu={this._handleContextClick}>
+            <Container 
+                onContextMenu={this._handleContextClick} 
+            >
                 <div className={styles.stats}>
                     <span className={styles.flags}>Flags: {bombCount - flagsValues.length}</span>              
                     <Button color="primary" onClick={this._handleNewGameClick}>New Game</Button>
@@ -187,8 +291,18 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
                             onTick={this._handleTick}
                         />
                     </div>
+                    <div className={styles.question}>
+                        <FontAwesomeIcon icon={faQuestionCircle}  id="question"/>
+                        <Tooltip placement="right" isOpen={this.state.tooltipOpen} target="question" toggle={this._toggleTooltip}>
+                            You can use arrows to move.
+                            Space for open.
+                            Esc for exit manual mode.
+                        </Tooltip>
+                    </div>
                 </div>
-                <div className={styles.field}>
+                <div 
+                    className={styles.field}
+                >
                     {this.renderField()}
                 </div>
                 {condition === GameConditionEnum.Win &&
