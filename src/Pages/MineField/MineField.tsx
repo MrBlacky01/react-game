@@ -7,7 +7,7 @@ import { Button, Container, Tooltip } from 'reactstrap';
 import { Timer } from './Components/Timer/Timer';
 import { ModalDialog } from './Components/ModalDialog/ModalDialog';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons'
+import { faQuestionCircle, faExpandArrowsAlt } from '@fortawesome/free-solid-svg-icons'
 
 interface MineFieldProps {
     width: number;
@@ -237,6 +237,25 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
         });
     }
 
+    _handleFullScreen = () =>{
+        this._activateFullscreen(document.body);
+    }
+
+    private _activateFullscreen(element: HTMLElement) {
+        if(element.requestFullscreen) {
+          element.requestFullscreen();        // W3C spec
+        }
+        /*else if (element.mozRequestFullScreen) {
+          element.mozRequestFullScreen();     // Firefox
+        }
+        else if (element.webkitRequestFullscreen) {
+          element.webkitRequestFullscreen();  // Safari
+        }
+        else if(element.msRequestFullscreen) {
+          element.msRequestFullscreen();      // IE/Edge
+        }*/
+    }
+
     renderField(){
         let resultTable: JSX.Element[] = [];
         const {width, height, bombCount} = this.props;
@@ -277,7 +296,7 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
         const {bombCount} = this.props;
         return (
             <Container 
-                onContextMenu={this._handleContextClick} 
+                onContextMenu={this._handleContextClick}
             >
                 <div className={styles.stats}>
                     <span className={styles.flags}>Flags: {bombCount - flagsValues.length}</span>              
@@ -291,13 +310,14 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
                             onTick={this._handleTick}
                         />
                     </div>
-                    <div className={styles.question}>
+                    <div className={styles.icon}>
                         <FontAwesomeIcon icon={faQuestionCircle}  id="question"/>
                         <Tooltip placement="right" isOpen={this.state.tooltipOpen} target="question" toggle={this._toggleTooltip}>
                             You can use arrows to move.
                             Space for open.
                             Esc for exit manual mode.
                         </Tooltip>
+                        <FontAwesomeIcon className={styles.icon} onClick={this._handleFullScreen} icon={faExpandArrowsAlt}/>
                     </div>
                 </div>
                 <div 
