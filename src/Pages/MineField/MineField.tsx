@@ -1,18 +1,25 @@
 import React from 'react';
 import styles from "./MineFiled.module.scss"
 import { FieldCell } from './Components/FieldCell/FieldCell';
-import { CellValueEnum, GameConditionEnum, MineSwiperField } from '../../AppConstants';
+import { CellValueEnum, GameConditionEnum, MineSwiperField, LocalStorageValues, GameFieldColorEnum, GameFlagTypeEnum } from '../../AppConstants';
 import { MineService } from './../../Services/MineService';
 import { Button, Container, Tooltip } from 'reactstrap';
 import { Timer } from './Components/Timer/Timer';
 import { ModalDialog } from './Components/ModalDialog/ModalDialog';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faQuestionCircle, faExpandArrowsAlt } from '@fortawesome/free-solid-svg-icons'
+import { faQuestionCircle } from '@fortawesome/free-solid-svg-icons'
+import { FullScreenItem } from './Components/FullScreenItem/FullScreenItem';
+import { Statistic } from 'Models/Statistic';
+
+type WinHandler = (stats: Statistic) => void;
 
 interface MineFieldProps {
     width: number;
     height: number;
     bombCount: number;
+    fieldColor: GameFieldColorEnum;
+    flagType: GameFlagTypeEnum;
+    onWin: WinHandler;
 }
 
 interface MineFieldState {
@@ -46,8 +53,15 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
     }
 
     componentDidMount(){
-        this._resetGameState();
+        if(!this._restoreGameState())
+            this._resetGameState();
         document.addEventListener("keydown", this._handleKeyDown, false);
+    }
+
+    componentDidUpdate(prevProps: MineFieldProps){
+        if(this.props.width !== prevProps.width){
+            this._resetGameState();
+        }
     }
 
     componentWillUnmount(){
@@ -78,7 +92,29 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
                     this.bombIndexes.push(index);
                 }
             });
+            
+            localStorage[LocalStorageValues.GAME_STATUS] = GameConditionEnum.New;
+            localStorage[LocalStorageValues.TIMER_VALUE] = 0;
+            localStorage[LocalStorageValues.FIELD_STATUS] = JSON.stringify(this.state.fieldStatuses);
+            localStorage[LocalStorageValues.FIELD_VALUES] = JSON.stringify(this.state.fieldValues);
+            localStorage[LocalStorageValues.FLAG_VALUES] = JSON.stringify(this.state.flagsValues);
         });
+    }
+
+    private _restoreGameState = (): boolean =>{
+        const currentGameStatusValue = localStorage[LocalStorageValues.GAME_STATUS];
+        if(currentGameStatusValue && currentGameStatusValue === GameConditionEnum.InProgress){
+            this.setState({
+                fieldValues: JSON.parse(localStorage[LocalStorageValues.FIELD_VALUES]),
+                fieldStatuses: JSON.parse(localStorage[LocalStorageValues.FIELD_STATUS]),
+                condition: currentGameStatusValue,
+                currentTime: Number(localStorage[LocalStorageValues.TIMER_VALUE]),
+                beginTime: Number(localStorage[LocalStorageValues.TIMER_VALUE]),
+                flagsValues: JSON.parse(localStorage[LocalStorageValues.FLAG_VALUES])
+            });
+            return true;
+        }
+        return false;
     }
 
     _handleFlag = (index: number, isPut: boolean) => {
@@ -94,6 +130,8 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
         this.setState({
             ...this.state,
             flagsValues: flagsValues,
+        }, () => {
+            localStorage[LocalStorageValues.FLAG_VALUES] = JSON.stringify(this.state.flagsValues);
         });
     }
 
@@ -104,12 +142,15 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
                     condition: isFailed ? GameConditionEnum.Failed: state.condition
                 }
             }, () => {
-            this._openCell(index);
+                localStorage[LocalStorageValues.GAME_STATUS] = this.state.condition;
+                this._openCell(index);
         });
     }
 
     _handleTick = (time: number) =>{
-        this.setState({currentTime: time});
+        this.setState({currentTime: time} , () => {
+            localStorage[LocalStorageValues.TIMER_VALUE] = this.state.currentTime;
+        });
     }
 
     _handleKeyDown = (event: KeyboardEvent) => {
@@ -198,6 +239,7 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
 
     private _openCell = (index: number) => {
         const {fieldValues, fieldStatuses, condition, flagsValues} = this.state;
+        const {onWin} = this.props;
         if(fieldStatuses[index])
             return;
         const isEmpty = fieldValues[index] == MineSwiperField.EMPTY_VALUE;
@@ -213,6 +255,19 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
             condition: isWin ? GameConditionEnum.Win: isInProgres,
             flagsValues: flagsValues
         }, () => {
+            if(isWin && onWin){
+                const {width, height, bombCount} = this.props;
+                onWin({
+                    height: height,
+                    width: width,
+                    bombCount: bombCount,
+                    result: this.state.currentTime,
+                    gameFinishedDate: new Date()
+                })
+            }
+            localStorage[LocalStorageValues.GAME_STATUS] = this.state.condition;
+            localStorage[LocalStorageValues.FLAG_VALUES] = JSON.stringify(this.state.flagsValues);
+            localStorage[LocalStorageValues.FIELD_STATUS] = JSON.stringify(this.state.fieldStatuses);
             if(isEmpty){
                 const neighbours = this.mineService.getNeighboursIndexesByIndex(index, this.props.width, this.props.height);
                 setTimeout(() => {
@@ -226,8 +281,9 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
     }
 
     private _isGameFinished = () =>{
+        const {fieldValues} = this.state;
         return !this.state.fieldStatuses.some( (item, index) => {
-            return (this.bombIndexes.findIndex(x => x === index) === -1) && !item;
+            return fieldValues[index] !== MineSwiperField.BOMB_VALUE && !item;
         });
     }
 
@@ -237,28 +293,10 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
         });
     }
 
-    _handleFullScreen = () =>{
-        this._activateFullscreen(document.body);
-    }
-
-    private _activateFullscreen(element: HTMLElement) {
-        if(element.requestFullscreen) {
-          element.requestFullscreen();        // W3C spec
-        }
-        /*else if (element.mozRequestFullScreen) {
-          element.mozRequestFullScreen();     // Firefox
-        }
-        else if (element.webkitRequestFullscreen) {
-          element.webkitRequestFullscreen();  // Safari
-        }
-        else if(element.msRequestFullscreen) {
-          element.msRequestFullscreen();      // IE/Edge
-        }*/
-    }
 
     renderField(){
         let resultTable: JSX.Element[] = [];
-        const {width, height, bombCount} = this.props;
+        const {width, height, bombCount, fieldColor, flagType} = this.props;
         const {fieldValues, flagsValues, fieldStatuses, selectedIndex} = this.state;
         const hasFreeFlags = flagsValues.length < bombCount;
         for(var i = 0; i < height; i++){
@@ -283,6 +321,8 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
                             onFlag={this._handleFlag}
                             onOpen={this._handleOpen}
                             isSelected={realIndex === selectedIndex}
+                            fieldColor={fieldColor}
+                            flagType={flagType}
                         />
                     })}
                 </div>
@@ -297,6 +337,7 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
         return (
             <Container 
                 onContextMenu={this._handleContextClick}
+                style={{paddingBottom: '70px'}}
             >
                 <div className={styles.stats}>
                     <span className={styles.flags}>Flags: {bombCount - flagsValues.length}</span>              
@@ -317,7 +358,7 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
                             Space for open.
                             Esc for exit manual mode.
                         </Tooltip>
-                        <FontAwesomeIcon className={styles.icon} onClick={this._handleFullScreen} icon={faExpandArrowsAlt}/>
+                        <FullScreenItem />
                     </div>
                 </div>
                 <div 

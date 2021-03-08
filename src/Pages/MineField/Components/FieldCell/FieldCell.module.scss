@@ -17,17 +17,6 @@
     transform: translate(-50%, -50%);
 }
 
-.closed{
-    background-color: CornflowerBlue;
-    &:hover{
-        background-color:  rgba(100, 149, 237, 0.5)
-    }
-}
-
-.opened{
-    background-color: rgba(100, 149, 237, 0.7);
-}
-
 @keyframes rotate {
 	100% {
 		transform: rotate(1turn);
@@ -68,5 +57,63 @@
 		height: calc(100% - 6px);
 		background: CornflowerBlue;
 		border-radius: 5px;
+	}
+}
+
+.blue{
+	&Closed{
+		background-color: CornflowerBlue;
+		&:hover{
+			background-color:  rgba(100, 149, 237, 0.5)
+		}
+	}
+	&Opened{
+		background-color:  rgba(100, 149, 237, 0.7)
+	}
+}
+
+.red{
+	&Closed{
+		background-color: FireBrick;
+		&:hover{
+			background-color:  rgba(178, 34, 34, 0.5)
+		}
+	}
+	&Opened{
+		background-color:  rgba(178, 34, 34, 0.7)
+	}
+}
+
+.yellow{
+	&Closed{
+		background-color: Orange;
+		&:hover{
+			background-color:  rgba(255, 165, 0, 0.5)
+		}
+	}
+	&Opened{
+		background-color:  rgba(255, 165, 0, 0.7)
+	}
+}
+.purple{
+	&Closed{
+		background-color: #8A2BE2;
+		&:hover{
+			background-color:  rgba(138,43,226, 0.5)
+		}
+	}
+	&Opened{
+		background-color:  rgba(138,43,226, 0.7)
+	}
+}
+.green{
+	&Closed{
+		background-color: ForestGreen;
+		&:hover{
+			background-color:  rgba(34,139,34, 0.5)
+		}
+	}
+	&Opened{
+		background-color:  rgba(34,139,34, 0.7)
 	}
 }

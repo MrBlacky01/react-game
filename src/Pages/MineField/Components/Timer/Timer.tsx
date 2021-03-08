@@ -15,7 +15,7 @@ interface TimerState {
 
 export class Timer extends React.Component<TimerProps, TimerState>{
 
-    private _watch: number;
+    private _watch: null | ReturnType<typeof setInterval>;
     constructor(props: TimerProps){
         super(props);
         this.state = {

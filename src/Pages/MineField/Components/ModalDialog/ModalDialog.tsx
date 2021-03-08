@@ -22,7 +22,7 @@ export const ModalDialog = (props: MineFieldProps) => {
     }
   
     return (
-      <div>
+      <>
         <Modal isOpen={modal} >
           <ModalHeader>{title}</ModalHeader>
           <ModalBody>
@@ -32,7 +32,7 @@ export const ModalDialog = (props: MineFieldProps) => {
             <Button color="primary" onClick={toggle}>Start New Game</Button>{' '}
           </ModalFooter>
         </Modal>
-      </div>
+      </>
     );
   }
   

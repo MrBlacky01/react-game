@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { Collapse, Navbar, NavbarToggler, NavbarBrand, Nav, NavItem, NavLink } from 'reactstrap';
 
-export const MainNavbar = () => {
+interface MainNavbarProps {
+  onStatsClick: () => void;
+  onSettingsClick: () => void;
+};
+
+export const MainNavbar: React.FC<MainNavbarProps> = (props: MainNavbarProps) => {
   const [collapsed, setCollapsed] = useState(true);
 
   const toggleNavbar = () => setCollapsed(!collapsed);
@@ -14,7 +19,10 @@ export const MainNavbar = () => {
         <Collapse isOpen={!collapsed} navbar>
           <Nav navbar>
             <NavItem>
-              <NavLink href="/settings/">Settings</NavLink>
+              <NavLink onClick={props.onStatsClick}>Statistic</NavLink>
+            </NavItem>
+            <NavItem>
+              <NavLink onClick={props.onSettingsClick}>Settings</NavLink>
             </NavItem>
           </Nav>
         </Collapse>
