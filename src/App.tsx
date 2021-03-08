@@ -90,7 +90,9 @@ export function App() {
         playMusic();
     }
     const handleUseSound = () => {
-        playSound();
+        if(soundValue > 1){
+            playSound();
+        }
     }
     return (
         <>
