@@ -6,15 +6,22 @@ import { Statistic } from "./Models/Statistic";
 import { LocalStorageValues, AppSettings, GameDifficultyEnum, GameFieldColorEnum, GameFlagTypeEnum } from "./AppConstants";
 import { StatisticModal } from './Components/StatisticModal/StatiscticModal';
 import { SettingsModal } from "./Components/SettingsModal/SettingsModal";
+import useSound from "use-sound";
+import music from "./Assets/sounds/Rezolution.mp3"
+import sound from "./Assets/sounds/Click.mp3"
 
 export function App() {
 
     const currentDifficulty: GameDifficultyEnum = localStorage[LocalStorageValues.DIFFICULTY];
     const currentFieldColor: GameFieldColorEnum = localStorage[LocalStorageValues.FIELD_COLOR];
     const currentFlagType: GameFlagTypeEnum = localStorage[LocalStorageValues.FLAG_TYPE];
+    const currentSoundValue: string = localStorage[LocalStorageValues.SOUND];
+    const currentMusicValue: string = localStorage[LocalStorageValues.MUSIC];
 
     const [statsOpen, setStatsOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [musicValue, setMusicValue] = useState(currentMusicValue ? Number(currentMusicValue): 0);
+    const [soundValue, setSoundValue] = useState(currentSoundValue? Number(currentSoundValue): 50);
     const [difficulty, setDifficulty] = useState(currentDifficulty ?? GameDifficultyEnum.Easy);
     const [color, setColor] = useState(currentFieldColor ?? GameFieldColorEnum.Blue);
     const [flagType, setFlagType] = useState(currentFlagType ?? GameFlagTypeEnum.Letter);
@@ -46,6 +53,17 @@ export function App() {
         setFlagType(type);
         localStorage[LocalStorageValues.FLAG_TYPE] = type;
     };
+    const onMusicValueChange = (value: number) => {
+        setMusicValue(value);
+        localStorage[LocalStorageValues.MUSIC] = value;
+        if(value <= 1){
+            stopMusic();
+        }
+    };
+    const onSoundValueChange = (value: number) => {
+        setSoundValue(value);
+        localStorage[LocalStorageValues.SOUND] = value;
+    };
 
     const getFieldWidthHeigth = (type: GameDifficultyEnum) => {
         switch(type){
@@ -59,6 +77,21 @@ export function App() {
         }
     };
 
+    const [playMusic, { stop: stopMusic, isPlaying }] = useSound(
+        music,
+        { volume: musicValue / 100 }
+    );
+    const [playSound, { stop: stopSound, isPlaying: isPlayingSound }] = useSound(
+        sound,
+        { volume: soundValue / 100}
+    );
+
+    if(!isPlaying && (musicValue > 1)){
+        playMusic();
+    }
+    const handleUseSound = () => {
+        playSound();
+    }
     return (
         <>
             <MainNavbar
@@ -72,6 +105,7 @@ export function App() {
                 fieldColor={color}
                 flagType={flagType}
                 onWin={_handleWin}
+                onUseSound={handleUseSound}
             />
             <StatisticModal 
                 isOpened={statsOpen}
@@ -83,9 +117,13 @@ export function App() {
                 difficulty={difficulty}
                 fieldColor={color}
                 flagType={flagType}
+                musicValue={musicValue}
+                soundValue={soundValue}
                 onDifficultyChange={onDifficultyChange}
                 onFieldColorChange={onColorChange}
                 onFlagTypeChange={onFlagTypeChange}
+                onMusicChange={onMusicValueChange}
+                onSoundChange={onSoundValueChange}
             />
             <Footer/>
         </>

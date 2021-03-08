@@ -12,6 +12,7 @@ import { FullScreenItem } from './Components/FullScreenItem/FullScreenItem';
 import { Statistic } from 'Models/Statistic';
 
 type WinHandler = (stats: Statistic) => void;
+type SoundHandler = () => void;
 
 interface MineFieldProps {
     width: number;
@@ -20,6 +21,7 @@ interface MineFieldProps {
     fieldColor: GameFieldColorEnum;
     flagType: GameFlagTypeEnum;
     onWin: WinHandler;
+    onUseSound: SoundHandler;
 }
 
 interface MineFieldState {
@@ -136,6 +138,10 @@ export class MineField extends React.Component<MineFieldProps, MineFieldState>{
     }
 
     _handleOpen = (index: number) => {       
+        const {onUseSound} = this.props;
+        if(onUseSound){
+            onUseSound();
+        }
         this.setState((state) => { 
                 const isFailed = state.fieldValues[index] === MineSwiperField.BOMB_VALUE;
                 return {

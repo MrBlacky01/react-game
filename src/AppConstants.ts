@@ -45,6 +45,8 @@ export class LocalStorageValues{
     public static readonly FIELD_COLOR: string = 'FIELD_COLOR';
     public static readonly FLAG_TYPE: string = 'FLAG_TYPE';
     public static readonly DIFFICULTY: string = 'DIFFICULTY';
+    public static readonly MUSIC: string = 'MUSIC';
+    public static readonly SOUND: string = 'SOUND';
 }
 
 export class AppSettings {
